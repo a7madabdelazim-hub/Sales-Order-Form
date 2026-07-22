@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<title>Sales Order</title>
+<style>
+
+:root {
+  --bg: #f2f2f7;
+  --border: #d0d0d5;
+  --muted: #6e6e73;
+  --accent: #0066cc;
+  --card-bg: #ffffff;
+  --radius: 10px;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: #1c1c1e;
+}
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+.header { position: sticky; top: 0; z-index: 10; padding: 10px 10px 6px 10px; }
+.glass-card {
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+.filename-bar { display: flex; align-items: center; gap: 8px; }
+.filename-icon { font-size: 16px; }
+.filename-input {
+  flex: 1; border: none; background: transparent; font-size: 15px;
+  font-weight: 600; outline: none; color: #1c1c1e; min-width: 0;
+}
+.filename-input.auto-mode { color: var(--muted); font-weight: 500; }
+.filename-badge {
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+  background: #e5e5ea; color: var(--muted); white-space: nowrap;
+}
+.filename-badge.auto-on { background: #e0f0ff; color: var(--accent); }
+.filename-btn {
+  border: none; background: rgba(0,0,0,0.05); border-radius: 8px;
+  width: 30px; height: 30px; font-size: 15px; cursor: pointer; color: #1c1c1e;
+}
+.header-row2 { display: flex; gap: 8px; margin-top: 8px; }
+.btn {
+  flex: 1; border: none; border-radius: 10px; padding: 10px 12px;
+  font-size: 14px; font-weight: 600; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; gap: 6px;
+}
+.btn-glass { background: rgba(0,0,0,0.06); color: #1c1c1e; }
+.btn-liquid-red { background: linear-gradient(180deg,#ff3b30,#d70015); color: #fff; box-shadow: 0 2px 8px rgba(215,0,21,0.35); }
+.body { flex: 1; padding: 0 10px 24px 10px; }
+.form-panel { max-width: 720px; margin: 0 auto; }
+.tabs { display: flex; gap: 6px; overflow-x: auto; padding: 10px 2px; -webkit-overflow-scrolling: touch; }
+.tab {
+  flex-shrink: 0; border: none; background: rgba(0,0,0,0.05); color: var(--muted);
+  padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.tab.active { background: #1c1c1e; color: #fff; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.card {
+  background: var(--card-bg); border-radius: var(--radius); padding: 14px;
+  margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.05);
+}
+.card-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--muted); margin-bottom: 10px;
+}
+.field { margin-bottom: 10px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.field-row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+.field-label {
+  display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px;
+}
+.field-label .ar { font-weight: 400; color: #9a9a9e; margin-left: 4px; }
+.field input, .field textarea {
+  width: 100%; border: 1px solid var(--border); border-radius: 8px;
+  padding: 9px 10px; font-size: 15px; background: #fafafa; outline: none;
+}
+.field input:focus, .field textarea:focus { border-color: var(--accent); background: #fff; }
+.field input[dir="auto"] { text-align: start; }
+.item-row { border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 8px; background: #fbfbfc; }
+.item-row h4 { margin: 0 0 8px 0; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.totals-box { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+.totals-box.grand { font-weight: 700; font-size: 16px; border-top: 1px solid var(--border); margin-top: 4px; padding-top: 8px; }
+.preview-wrap { display: none; }
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: rgba(28,28,30,0.92); color: #fff; padding: 10px 18px; border-radius: 10px;
+  font-size: 13px; z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.toast.error { background: rgba(215,0,21,0.95); }
+
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="header">
+    <div class="glass-card">
+      <div class="filename-bar">
+        <span class="filename-icon">📄</span>
+        <input type="text" id="filenameInput" class="filename-input auto-mode"
+               placeholder="Sales Order" autocomplete="off" spellcheck="false" />
+        <span class="filename-badge auto-on" id="filenameAutoBadge">Auto</span>
+        <button type="button" class="filename-btn" id="filenameAutoBtn" title="Re-derive filename">&#8635;</button>
+        <button type="button" class="filename-btn" id="filenameCopyBtn" title="Copy filename">&#9729;</button>
+      </div>
+      <div class="header-row2">
+        <button type="button" class="btn btn-glass" id="btnNew">+ New</button>
+        <button type="button" class="btn btn-liquid-red" id="btnExport">Export Image</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="body">
+    <section class="form-panel">
+      <div class="tabs" id="tabs">
+        <button type="button" class="tab active" data-tab="order">Order</button>
+        <button type="button" class="tab" data-tab="customer">Customer</button>
+        <button type="button" class="tab" data-tab="items">Items</button>
+        <button type="button" class="tab" data-tab="payment">Payment</button>
+      </div>
+
+      <div class="tab-panel active" data-panel="order">
+        <div class="card">
+          <div class="card-title">Order Info</div>
+          <div class="field">
+            <label class="field-label">Order No. <span class="ar">رقم الطلب</span></label>
+            <input type="text" data-field="orderNo" />
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Sales Order Date <span class="ar">تاريخ الطلب</span></label>
+              <input type="text" data-field="orderDate" placeholder="DD/MM/YYYY" />
+            </div>
+            <div class="field">
+              <label class="field-label">Delivery Date <span class="ar">تاريخ التسليم</span></label>
+              <input type="text" data-field="deliveryDate" placeholder="DD/MM/YYYY" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-panel="customer">
+        <div class="card">
+          <div class="card-title">Customer Information</div>
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">ACC. # <span class="ar">رقم الحساب</span></label>
+              <input type="text" inputmode="decimal" data-field="accNo" />
+            </div>
+            <div class="field">
+              <label class="field-label">Name <span class="ar">الاسم</span></label>
+              <input type="text" dir="auto" data-field="customerName" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Address <span class="ar">العنوان</span></label>
+            <input type="text" dir="auto" data-field="address" />
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Contact <span class="ar">جهة الاتصال</span></label>
+              <input type="text" dir="auto" data-field="contact" />
+            </div>
+            <div class="field">
+              <label class="field-label">Phone <span class="ar">الهاتف</span></label>
+              <input type="text" data-field="phone" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Email <span class="ar">البريد الإلكتروني</span></label>
+            <input type="text" data-field="email" />
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-panel="items">
+        <div class="card">
+          <div class="card-title">Itemized List of Goods</div>
+          <div id="itemRows"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-panel="payment">
+        <div class="card">
+          <div class="card-title">Payment Terms <span class="ar">شروط الدفع</span></div>
+          <div class="field">
+            <label class="field-label">Terms (e.g. 90 DAYS)</label>
+            <input type="text" data-field="paymentTerms" />
+          </div>
+          <div class="field-row-3">
+            <div class="field"><label class="field-label">0-30</label><input type="text" data-field="aging.d0_30" /></div>
+            <div class="field"><label class="field-label">30-60</label><input type="text" data-field="aging.d30_60" /></div>
+            <div class="field"><label class="field-label">60-90</label><input type="text" data-field="aging.d60_90" /></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label class="field-label">90-120</label><input type="text" data-field="aging.d90_120" /></div>
+            <div class="field"><label class="field-label">&gt;120</label><input type="text" data-field="aging.over120" /></div>
+          </div>
+          <div class="field">
+            <label class="field-label">Payment (SAR)</label>
+            <input type="text" inputmode="decimal" data-field="paymentSar" />
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Totals</div>
+          <div class="totals-box"><span>Subtotal</span><span id="uiSubtotal">0.00 SAR</span></div>
+          <div class="totals-box"><span>VAT 15%</span><span id="uiVat">0.00 SAR</span></div>
+          <div class="totals-box grand"><span>Total</span><span id="uiTotal">0.00 SAR</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Sign-off</div>
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Salesman <span class="ar">مندوب المبيعات</span></label>
+              <input type="text" dir="auto" data-field="salesman" />
+            </div>
+            <div class="field">
+              <label class="field-label">Approved <span class="ar">معتمد</span></label>
+              <input type="text" dir="auto" data-field="approved" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card preview-wrap">
+        <iframe id="previewFrame" style="width:100%; height:1px; border:none;"></iframe>
+      </div>
+    </section>
+  </div>
+</div>
+
+
+<template id="pdfTemplate">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Sales Order</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; background: #fff;
+    font-family: "Calibri", "Carlito", "Liberation Sans", "Arial", sans-serif;
+    color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .page { width: 595pt; padding: 20pt 24pt; position: relative; font-size: 10.5pt; margin: 0 auto; }
+  .print-wrapper { width: 595pt; margin: 0 auto; }
+
+  .title-row { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2pt solid #000; padding-bottom: 8pt; margin-bottom: 10pt; }
+  .title-en { font-size: 22pt; font-weight: 800; letter-spacing: 0.5pt; }
+  .title-ar { font-size: 14pt; font-weight: 700; color: #333; }
+
+  .top-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; margin-bottom: 10pt; }
+  .top-cell { border: 1pt solid #000; padding: 5pt 8pt; }
+  .top-cell:not(:first-child) { border-left: none; }
+  .top-label { font-size: 8.5pt; text-transform: uppercase; color: #555; font-weight: 700; }
+  .top-value { font-size: 12pt; font-weight: 700; color: #c00000; margin-top: 2pt; }
+
+  .section-band { background: #1c1c1e; color: #fff; font-weight: 700; font-size: 11pt; padding: 5pt 10pt; margin: 10pt 0 0 0; letter-spacing: 0.3pt; }
+  .ci-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1pt solid #000; border-top: none; }
+  .ci-cell { border-right: 1pt solid #000; padding: 6pt 10pt; }
+  .ci-cell:last-child { border-right: none; }
+  .ci-cell.full { grid-column: 1 / -1; border-right: none; border-top: 1pt solid #000; }
+  .ci-label { font-size: 8.5pt; text-transform: uppercase; color: #555; font-weight: 700; }
+  .ci-value { font-size: 12pt; font-weight: 700; margin-top: 2pt; }
+  .ci-value.ar { font-family: "Arial", "Traditional Arabic", sans-serif; }
+
+  .aging-table { width: 100%; border-collapse: collapse; margin-top: 0; }
+  .aging-table th, .aging-table td {
+    border: 1pt solid #000; border-top: none; text-align: center; padding: 4pt; font-size: 9pt;
+  }
+  .aging-table th { background: #eee; font-weight: 700; }
+  .aging-table td.val { font-weight: 700; color: #c00000; font-size: 10pt; }
+  .terms-cell { font-weight: 700; font-size: 10pt; }
+
+  .items-table { width: 100%; border-collapse: collapse; margin-top: 0; table-layout: fixed; }
+  .items-table th {
+    background: #1c1c1e; color: #fff; font-weight: 700; text-align: center;
+    font-size: 9pt; padding: 5pt 3pt; border: 1pt solid #000;
+  }
+  .items-table td { border: 1pt solid #000; padding: 4pt 4pt; font-size: 10pt; text-align: center; height: 16pt; }
+  .items-table td.pname { text-align: left; padding-left: 6pt; }
+
+  .totals-grid { display: grid; grid-template-columns: 2fr 1fr; margin-top: 0; }
+  .totals-grid > div { border: 1pt solid #000; border-top: none; padding: 5pt 10pt; font-size: 10.5pt; }
+  .totals-grid .tlabel { text-align: right; font-weight: 700; background: #f5f5f5; }
+  .totals-grid .tval { text-align: right; font-weight: 700; }
+  .totals-grid .grand .tlabel, .totals-grid .grand .tval { font-size: 13pt; background: #1c1c1e; color: #fff; }
+
+  .sig-grid { display: grid; grid-template-columns: 1fr 1fr; margin-top: 16pt; }
+  .sig-grid > div { border-top: 1pt solid #000; padding-top: 4pt; text-align: center; font-size: 9.5pt; font-weight: 700; margin: 0 20pt; }
+</style>
+</head>
+<body>
+<div class="print-wrapper">
+<div class="page">
+
+  <div class="title-row">
+    <div class="title-en">SALES ORDER</div>
+    <div class="title-ar">أمر بيع</div>
+  </div>
+
+  <div class="top-grid">
+    <div class="top-cell"><div class="top-label">Order No.</div><div class="top-value">{{orderNo}}</div></div>
+    <div class="top-cell"><div class="top-label">Sales Order Date</div><div class="top-value">{{orderDate}}</div></div>
+    <div class="top-cell"><div class="top-label">Delivery Date</div><div class="top-value">{{deliveryDate}}</div></div>
+  </div>
+
+  <div class="section-band">Customer Information / بيانات العميل</div>
+  <div class="ci-grid">
+    <div class="ci-cell"><div class="ci-label">ACC.#</div><div class="ci-value">{{accNo}}</div></div>
+    <div class="ci-cell"><div class="ci-label">Name / الاسم</div><div class="ci-value ar">{{customerName}}</div></div>
+    <div class="ci-cell full"><div class="ci-label">Address / العنوان</div><div class="ci-value ar">{{address}}</div></div>
+    <div class="ci-cell"><div class="ci-label">Contact / جهة الاتصال</div><div class="ci-value">{{contact}}</div></div>
+    <div class="ci-cell"><div class="ci-label">Phone / الهاتف</div><div class="ci-value">{{phone}}</div></div>
+    <div class="ci-cell full"><div class="ci-label">Email / البريد الإلكتروني</div><div class="ci-value">{{email}}</div></div>
+  </div>
+
+  <div class="section-band">Payment Terms / شروط الدفع</div>
+  <table class="aging-table">
+    <tr>
+      <th style="width:14%;">Terms</th>
+      <th>0-30</th><th>30-60</th><th>60-90</th><th>90-120</th><th>&gt;120</th>
+      <th style="width:16%;">Payment (SAR)</th>
+    </tr>
+    <tr>
+      <td class="terms-cell">{{paymentTerms}}</td>
+      <td class="val">{{aging.d0_30}}</td>
+      <td class="val">{{aging.d30_60}}</td>
+      <td class="val">{{aging.d60_90}}</td>
+      <td class="val">{{aging.d90_120}}</td>
+      <td class="val">{{aging.over120}}</td>
+      <td class="val">{{paymentSar}}</td>
+    </tr>
+  </table>
+
+  <div class="section-band">Itemized List of Goods / قائمة البضائع</div>
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th style="width:6%;">No.</th>
+        <th style="width:12%;">Code</th>
+        <th style="width:38%;">Product Name</th>
+        <th style="width:12%;">QTY</th>
+        <th style="width:14%;">Price</th>
+        <th style="width:18%;">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{itemRowsHtml}}
+    </tbody>
+  </table>
+
+  <div class="totals-grid">
+    <div class="tlabel">Subtotal</div><div class="tval">{{subtotal}}</div>
+    <div class="tlabel">VAT 15%</div><div class="tval">{{vat}}</div>
+    <div class="tlabel grand">Total</div><div class="tval grand">{{grandTotal}}</div>
+  </div>
+
+  <div class="sig-grid">
+    <div>{{salesman}}<br/>Salesman / مندوب المبيعات</div>
+    <div>{{approved}}<br/>Approved / معتمد</div>
+  </div>
+
+</div>
+</div>
+</body>
+</html>
+</template>
+
+<script src="[cdnjs.cloudflare.com](https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js)"></script>
+
+<script>
+(function() {
+  'use strict';
+
+  function emptyForm() {
+    var items = [];
+    for (var i = 0; i < 12; i++) items.push({ code: '', productName: '', qty: '', price: '', total: '' });
+    return {
+      orderNo: '', orderDate: '', deliveryDate: '',
+      accNo: '', customerName: '', address: '', contact: '', phone: '', email: '',
+      paymentTerms: '', aging: { d0_30: '', d30_60: '', d60_90: '', d90_120: '', over120: '' }, paymentSar: '',
+      items: items,
+      salesman: '', approved: ''
+    };
+  }
+
+  var state = { form: emptyForm() };
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+  function getNested(obj, path) {
+    return path.split('.').reduce(function(o, k) { return (o == null ? undefined : o[k]); }, obj);
+  }
+  function setNested(obj, path, value) {
+    var keys = path.split('.');
+    var last = keys.pop();
+    var target = keys.reduce(function(o, k) { return (o[k] = o[k] || {}); }, obj);
+    target[last] = value;
+  }
+  function fmt(n) {
+    n = parseFloat(n) || 0;
+    return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+  function toast(msg, type) {
+    var t = document.createElement('div');
+    t.className = 'toast' + (type === 'error' ? ' error' : '');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function() { t.remove(); }, 2200);
+  }
+
+  function computeTotals() {
+    var subtotal = 0;
+    state.form.items.forEach(function(it) {
+      var qty = parseFloat(it.qty) || 0;
+      var price = parseFloat(it.price) || 0;
+      var total = qty && price ? qty * price : (parseFloat(it.total) || 0);
+      it.total = total ? fmt(total) : '';
+      subtotal += total;
+    });
+    var vat = subtotal * 0.15;
+    var grand = subtotal + vat;
+    return { subtotal: subtotal, vat: vat, grand: grand };
+  }
+
+  function getPdfTemplate() {
+    return document.getElementById('pdfTemplate').innerHTML;
+  }
+
+  function renderItemRowsHtml() {
+    return state.form.items.map(function(it, idx) {
+      return '<tr>' +
+        '<td>' + (idx + 1) + '</td>' +
+        '<td>' + escapeHtml(it.code) + '</td>' +
+        '<td class="pname">' + escapeHtml(it.productName) + '&nbsp;</td>' +
+        '<td>' + escapeHtml(it.qty) + '</td>' +
+        '<td>' + escapeHtml(it.price) + '</td>' +
+        '<td>' + escapeHtml(it.total) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function renderPdfHtml(form) {
+    var totals = computeTotals();
+    var html = getPdfTemplate();
+    var tokens = {
+      '{{orderNo}}': escapeHtml(form.orderNo),
+      '{{orderDate}}': escapeHtml(form.orderDate),
+      '{{deliveryDate}}': escapeHtml(form.deliveryDate),
+      '{{accNo}}': escapeHtml(form.accNo),
+      '{{customerName}}': escapeHtml(form.customerName),
+      '{{address}}': escapeHtml(form.address),
+      '{{contact}}': escapeHtml(form.contact),
+      '{{phone}}': escapeHtml(form.phone),
+      '{{email}}': escapeHtml(form.email),
+      '{{paymentTerms}}': escapeHtml(form.paymentTerms),
+      '{{aging.d0_30}}': escapeHtml(form.aging.d0_30),
+      '{{aging.d30_60}}': escapeHtml(form.aging.d30_60),
+      '{{aging.d60_90}}': escapeHtml(form.aging.d60_90),
+      '{{aging.d90_120}}': escapeHtml(form.aging.d90_120),
+      '{{aging.over120}}': escapeHtml(form.aging.over120),
+      '{{paymentSar}}': escapeHtml(form.paymentSar),
+      '{{itemRowsHtml}}': renderItemRowsHtml(),
+      '{{subtotal}}': fmt(totals.subtotal) + ' SAR',
+      '{{vat}}': fmt(totals.vat) + ' SAR',
+      '{{grandTotal}}': fmt(totals.grand) + ' SAR',
+      '{{salesman}}': escapeHtml(form.salesman),
+      '{{approved}}': escapeHtml(form.approved)
+    };
+    html = html.replace(/\{\{[^{}]+\}\}/g, function(m) {
+      return Object.prototype.hasOwnProperty.call(tokens, m) ? tokens[m] : m;
+    });
+    return html;
+  }
+
+  function updateTotalsUi() {
+    var totals = computeTotals();
+    document.getElementById('uiSubtotal').textContent = fmt(totals.subtotal) + ' SAR';
+    document.getElementById('uiVat').textContent = fmt(totals.vat) + ' SAR';
+    document.getElementById('uiTotal').textContent = fmt(totals.grand) + ' SAR';
+  }
+
+  var previewTimer = null;
+  function schedulePreview() {
+    if (previewTimer) clearTimeout(previewTimer);
+    previewTimer = setTimeout(function() { updateTotalsUi(); }, 150);
+  }
+
+  function initTabs() {
+    document.querySelectorAll('#tabs .tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('#tabs .tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+        tab.classList.add('active');
+        var target = tab.getAttribute('data-tab');
+        document.querySelector('.tab-panel[data-panel="' + target + '"]').classList.add('active');
+      });
+    });
+  }
+
+  function renderItems() {
+    var container = document.getElementById('itemRows');
+    container.innerHTML = '';
+    state.form.items.forEach(function(item, idx) {
+      var row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = '<h4>Item ' + (idx + 1) + '</h4>' +
+        '<div class="field-row">' +
+          '<div class="field"><label class="field-label">Code</label>' +
+            '<input type="text" data-item="' + idx + '.code" value="' + escapeHtml(item.code) + '"></div>' +
+          '<div class="field"><label class="field-label">Product Name</label>' +
+            '<input type="text" data-item="' + idx + '.productName" value="' + escapeHtml(item.productName) + '"></div>' +
+        '</div>' +
+        '<div class="field-row-3">' +
+          '<div class="field"><label class="field-label">QTY</label>' +
+            '<input type="text" inputmode="decimal" data-item="' + idx + '.qty" value="' + escapeHtml(item.qty) + '"></div>' +
+          '<div class="field"><label class="field-label">Price</label>' +
+            '<input type="text" inputmode="decimal" data-item="' + idx + '.price" value="' + escapeHtml(item.price) + '"></div>' +
+          '<div class="field"><label class="field-label">Total</label>' +
+            '<input type="text" data-item="' + idx + '.total" value="' + escapeHtml(item.total) + '" readonly style="background:#f0f0f0;"></div>' +
+        '</div>';
+      container.appendChild(row);
+    });
+    container.querySelectorAll('input[data-item]').forEach(function(input) {
+      input.addEventListener('input', function() {
+        var path = input.getAttribute('data-item').split('.');
+        var idx = parseInt(path[0], 10);
+        var key = path[1];
+        state.form.items[idx][key] = input.value;
+        if (key === 'qty' || key === 'price') {
+          var qty = parseFloat(state.form.items[idx].qty) || 0;
+          var price = parseFloat(state.form.items[idx].price) || 0;
+          if (qty && price) {
+            var total = fmt(qty * price);
+            state.form.items[idx].total = total;
+            var totalInput = document.querySelector('input[data-item="' + idx + '.total"]');
+            if (totalInput) totalInput.value = total;
+          }
+        }
+        schedulePreview();
+      });
+    });
+  }
+
+  function bindTextFields() {
+    document.querySelectorAll('input[data-field]').forEach(function(input) {
+      var path = input.getAttribute('data-field');
+      var v = getNested(state.form, path);
+      input.value = v == null ? '' : v;
+      input.addEventListener('input', function() {
+        setNested(state.form, path, input.value);
+        schedulePreview();
+        updateEditingName();
+      });
+    });
+  }
+
+  var filenameAutoMode = true;
+  function autoDeriveFilename() {
+    var parts = [state.form.customerName, 'Sales Order', state.form.orderDate]
+      .map(function(s) { return (s || '').trim(); }).filter(Boolean);
+    return parts.length ? parts.join(' \u2014 ') : 'Sales Order';
+  }
+  function sanitizeFilename(s) {
+    return String(s == null ? '' : s).replace(/[\\\/:*?"<>|]/g, '').replace(/\s+/g, ' ').trim();
+  }
+  function currentFilename() {
+    var input = document.getElementById('filenameInput');
+    var raw = (input && input.value ? input.value : autoDeriveFilename()).trim();
+    var safe = sanitizeFilename(raw);
+    return safe || 'Sales Order';
+  }
+  function refreshFilenameBar() {
+    var input = document.getElementById('filenameInput');
+    var badge = document.getElementById('filenameAutoBadge');
+    if (!input || !badge) return;
+    if (filenameAutoMode) {
+      input.value = autoDeriveFilename();
+      input.classList.add('auto-mode');
+      badge.textContent = 'Auto'; badge.classList.add('auto-on');
+    } else {
+      input.classList.remove('auto-mode');
+      badge.textContent = 'Manual'; badge.classList.remove('auto-on');
+    }
+  }
+  function bindFilenameBar() {
+    var input = document.getElementById('filenameInput');
+    var autoBtn = document.getElementById('filenameAutoBtn');
+    var copyBtn = document.getElementById('filenameCopyBtn');
+    if (!input || !autoBtn || !copyBtn) return;
+    var userTouched = false;
+    input.addEventListener('focus', function() {
+      if (filenameAutoMode) input.value = autoDeriveFilename();
+    });
+    input.addEventListener('input', function() {
+      if (!userTouched) { userTouched = true; filenameAutoMode = false; }
+      refreshFilenameBar();
+    });
+    autoBtn.addEventListener('click', function() {
+      filenameAutoMode = true; userTouched = false;
+      refreshFilenameBar();
+      toast('Filename re-derived');
+    });
+    copyBtn.addEventListener('click', function() {
+      var full = currentFilename() + '.png';
+      var done = function() { toast('Copied: ' + full); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(full).then(done, function() { fallbackCopy(full); done(); });
+      } else { fallbackCopy(full); done(); }
+    });
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+  function updateEditingName() { refreshFilenameBar(); }
+
+  function newForm() {
+    state.form = emptyForm();
+    filenameAutoMode = true;
+    syncAllInputs();
+    updateEditingName();
+    schedulePreview();
+    toast('Started a new blank order');
+  }
+
+  function syncAllInputs() {
+    document.querySelectorAll('input[data-field]').forEach(function(input) {
+      var path = input.getAttribute('data-field');
+      var v = getNested(state.form, path);
+      input.value = v == null ? '' : v;
+    });
+    renderItems();
+    updateTotalsUi();
+  }
+
+  function exportPng() {
+    var html = renderPdfHtml(state.form);
+    var fileName = currentFilename();
+
+    if (typeof window.html2canvas === 'undefined') {
+      toast('html2canvas not loaded — refresh and try again', 'error');
+      return;
+    }
+
+    var container = document.createElement('div');
+    container.style.cssText = 'position:fixed; left:-99999px; top:0; width:595pt; background:#fff;';
+    container.innerHTML = html;
+    document.body.appendChild(container);
+
+    var target = container.querySelector('.page') || container;
+
+    var waitForReady = function(cb) {
+      try {
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(function() { setTimeout(cb, 400); });
+        } else { setTimeout(cb, 800); }
+      } catch (e) { setTimeout(cb, 800); }
+    };
+
+    waitForReady(function() {
+      var exportWidthPx = Math.ceil(595 * 96 / 72);
+      window.html2canvas(target, {
+        scale: 4, backgroundColor: '#ffffff', useCORS: true, allowTaint: false, logging: false,
+        width: exportWidthPx, height: target.scrollHeight,
+        windowWidth: exportWidthPx, windowHeight: target.scrollHeight
+      }).then(function(canvas) {
+        canvas.toBlob(function(blob) {
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url; a.download = fileName + '.png';
+          document.body.appendChild(a); a.click(); a.remove();
+          URL.revokeObjectURL(url);
+          container.remove();
+          toast('Image ready: ' + fileName + '.png');
+        }, 'image/png', 1.0);
+      }).catch(function(e) {
+        console.error('html2canvas error', e);
+        container.remove();
+        toast('Image export failed: ' + e.message, 'error');
+      });
+    });
+  }
+
+  function init() {
+    initTabs();
+    bindTextFields();
+    bindFilenameBar();
+
+    (function autoFillOrderDate() {
+      if (!state.form.orderDate) {
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        state.form.orderDate = dd + '/' + mm + '/' + yyyy;
+      }
+      var orderDateInput = document.querySelector('input[data-field="orderDate"]');
+      if (orderDateInput) orderDateInput.value = state.form.orderDate;
+    })();
+
+    renderItems();
+    updateEditingName();
+    updateTotalsUi();
+
+    document.getElementById('btnNew').addEventListener('click', newForm);
+    document.getElementById('btnExport').addEventListener('click', exportPng);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+</script>
+
+</body>
+</html>
