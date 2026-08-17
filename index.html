@@ -351,41 +351,44 @@ html, body {
 
   /* ---------- Customer info grid — white liquid chip card ---------- */
   .ci-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    background: #ffffff;
-    box-shadow: 0 6pt 18pt rgba(27,30,82,0.10);
-    border-radius: 18pt;
-    border: 1pt solid rgba(27,30,82,0.08);
-    overflow: hidden;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8pt;
   }
-  .ci-cell { border-right: 1pt solid rgba(27,30,82,0.08); border-bottom: 1pt solid rgba(27,30,82,0.06); padding: 10pt 13pt; }
-  .ci-cell:last-child { border-right: none; }
-  .ci-cell.full { grid-column: 1 / -1; border-right: none; border-bottom: none; }
+  .ci-cell {
+    padding: 10pt 13pt;
+    background: #ffffff;
+    border-radius: 16pt;
+    box-shadow: 0 5pt 14pt rgba(27,30,82,0.10);
+    border: 1pt solid rgba(27,30,82,0.08);
+  }
+  .ci-cell.full { grid-column: 1 / -1; }
   .ci-label { font-size: 9.5pt; text-transform: uppercase; color: #1B1E52; font-weight: 700; letter-spacing: 0.6pt; }
   .ci-value {
     font-size: 15pt; font-weight: 800; margin-top: 4pt;
     color: #99451F;
   }
 
-  /* ---------- Items table — rounded chip rows, spaced apart (liquid look) ---------- */
+  /* ---------- Items table — rounded chip rows, spaced apart, column dividers ---------- */
   .items-table { width: 100%; border-collapse: separate; border-spacing: 0 8pt; margin-top: 16pt; table-layout: fixed; }
   .items-table th {
     background: #292D78;
     color: #FBF1EA; font-weight: 800; text-align: center;
     font-size: 10.5pt; padding: 10pt 4pt;
     letter-spacing: 0.6pt; border: none;
+    border-right: 1pt solid rgba(255,255,255,0.18);
   }
+  .items-table th.pname { text-align: left; padding-left: 10pt; }
   .items-table th:first-child { border-radius: 14pt 0 0 14pt; }
-  .items-table th:last-child { border-radius: 0 14pt 14pt 0; }
+  .items-table th:last-child { border-radius: 0 14pt 14pt 0; border-right: none; }
   .items-table td {
     border-top: 1pt solid rgba(27,30,82,0.08);
     border-bottom: 1pt solid rgba(27,30,82,0.08);
+    border-right: 1pt solid rgba(27,30,82,0.10);
     padding: 9pt 6pt; font-size: 12pt; text-align: center; height: 22pt;
     color: #1B1E52;
     background: #ffffff;
   }
   .items-table td:first-child { border-left: 1pt solid rgba(27,30,82,0.08); border-radius: 14pt 0 0 14pt; }
-  .items-table td:last-child { border-right: 1pt solid rgba(27,30,82,0.08); border-radius: 0 14pt 14pt 0; }
+  .items-table td:last-child { border-right: none; border-radius: 0 14pt 14pt 0; }
   /* Zebra row: whisper-light navy tint, only on even rows */
   .items-table tbody tr:nth-child(even) td {
     background: #F4F5FB;
@@ -395,7 +398,7 @@ html, body {
     font-weight: 800;
     color: #99451F;
   }
-  /* Product-name column stays dark navy */
+  /* Product-name column stays dark navy, left-aligned to match its header */
   .items-table td.pname {
     text-align: left; padding-left: 10pt;
     color: #1B1E52;
@@ -423,12 +426,15 @@ html, body {
   .totals-grid .tlabel.grand { color: #FBF1EA; }
   .totals-grid .tval.grand { color: #FBF1EA; font-size: 12pt; }
 
-  /* ---------- Signature row ---------- */
-  .sig-grid { display: grid; grid-template-columns: 1fr 1fr; margin-top: 24pt; }
+  /* ---------- Signature row — soft liquid chips ---------- */
+  .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8pt; margin-top: 24pt; }
   .sig-grid > div {
-    border-top: 1.5pt solid #1B1E52;
-    padding-top: 7pt; text-align: center;
-    font-size: 11pt; font-weight: 800; margin: 0 20pt;
+    background: #ffffff;
+    border-radius: 16pt;
+    box-shadow: 0 5pt 14pt rgba(27,30,82,0.10);
+    border: 1pt solid rgba(27,30,82,0.08);
+    padding: 10pt 13pt; text-align: center;
+    font-size: 11pt; font-weight: 800;
     color: #1B1E52; letter-spacing: 0.6pt;
   }
 
@@ -694,7 +700,7 @@ var CGC_LOGO_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAisAAAMcC
       '</div>' +
       '<table class="items-table"><thead><tr>' +
         '<th style="width:6%;">No.</th>' +
-        '<th style="width:46%;">Product Name</th>' +
+        '<th class="pname" style="width:46%;">Product Name</th>' +
         '<th style="width:14%;">QTY (CTN)</th>' +
         '<th style="width:16%;">Price</th>' +
         '<th style="width:18%;">Total</th>' +
