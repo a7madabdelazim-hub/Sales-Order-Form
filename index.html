@@ -126,7 +126,6 @@ html, body {
       </div>
       <div class="header-row2">
         <button type="button" class="btn btn-glass" id="btnNew">+ New</button>
-        <button type="button" class="btn btn-glass" id="btnPreview" style="background:rgba(0,102,204,0.12);color:#0066cc;">Preview</button>
         <button type="button" class="btn btn-liquid-red" id="btnExport">Export Image</button>
       </div>
     </div>
@@ -254,7 +253,7 @@ html, body {
   /*
      Navy       : #1B1E52 -> #292D78  (the logo's own navy)
      Copper     : #99451F (text)  /  #C2703D (decorative accents only)
-     Base       : pure white #ffffff, with a soft warm-cream stripe #FBF1EA
+     Base       : pure white #ffffff, with a whisper-light navy stripe #F4F5FB
      Borders    : rgba(27,30,82,0.08-0.18)
   */
 
@@ -387,9 +386,9 @@ html, body {
   }
   .items-table td:first-child { border-left: 1pt solid rgba(27,30,82,0.08); border-radius: 14pt 0 0 14pt; }
   .items-table td:last-child { border-right: 1pt solid rgba(27,30,82,0.08); border-radius: 0 14pt 14pt 0; }
-  /* Zebra row: warm cream stripe, only on even rows */
+  /* Zebra row: whisper-light navy tint, only on even rows */
   .items-table tbody tr:nth-child(even) td {
-    background: #FBF1EA;
+    background: #F4F5FB;
   }
   /* Numeric columns get solid copper text (AA-contrast, not the decorative bright copper) */
   .items-table td:not(:first-child) {
@@ -926,18 +925,30 @@ var CGC_LOGO_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAisAAAMcC
         windowWidth: exportWidthPx, windowHeight: target.scrollHeight
       }).then(function(canvas) {
         canvas.toBlob(function(blob) {
-          var url = URL.createObjectURL(blob);
-          var a = document.createElement('a');
-          a.href = url; a.download = fileName;
-          document.body.appendChild(a); a.click(); a.remove();
-          URL.revokeObjectURL(url);
           container.remove();
-          toast('Image ready: ' + fileName);
           logExportedOrder(state.form, computeTotals());
           bumpOrderCounter();
           assignNewOrderNo();
           var orderNoInput = document.querySelector('input[data-field="orderNo"]');
           if (orderNoInput) orderNoInput.value = state.form.orderNo;
+
+          var shareFileName = /\.png$/i.test(fileName) ? fileName : fileName + '.png';
+          var file = new File([blob], shareFileName, { type: 'image/png' });
+
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: shareFileName, text: 'Sales Order' })
+              .catch(function(e) {
+                if (e && e.name === 'AbortError') return;
+                toast('Share failed: ' + e.message, 'error');
+              });
+          } else {
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = shareFileName;
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+            toast('Sharing isn\'t supported on this browser — saved instead: ' + shareFileName);
+          }
         }, 'image/png', 1.0);
       }).catch(function(e) {
         console.error('html2canvas error', e);
@@ -973,32 +984,7 @@ var CGC_LOGO_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAisAAAMcC
     updateTotalsUi();
 
     document.getElementById('btnNew').addEventListener('click', newForm);
-    var previewBtn = document.getElementById('btnPreview');
-    if (previewBtn) previewBtn.addEventListener('click', previewExport);
     document.getElementById('btnExport').addEventListener('click', exportPng);
-  }
-
-  /* Preview the export in a modal overlay so the user can verify
-     all values are present BEFORE downloading the PNG. */
-  function previewExport() {
-    var html = renderPdfHtml(state.form);
-    var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:99998; display:flex; align-items:flex-start; justify-content:center; padding:24px; overflow:auto;';
-    var card = document.createElement('div');
-    card.style.cssText = 'background:#fff; border-radius:12px; padding:16px; max-width:620px; width:100%; box-shadow:0 8px 32px rgba(0,0,0,0.4);';
-    var closeBtn = document.createElement('button');
-    closeBtn.textContent = 'Close Preview';
-    closeBtn.style.cssText = 'margin-bottom:12px; padding:8px 16px; border:none; border-radius:8px; background:#1c1c1e; color:#fff; font-weight:700; cursor:pointer; font-size:14px;';
-    closeBtn.onclick = function() { overlay.remove(); };
-    var previewBox = document.createElement('div');
-    previewBox.style.cssText = 'border:1px solid #ddd; overflow:hidden; background:#fff;';
-    previewBox.innerHTML = html;
-    card.appendChild(closeBtn);
-    card.appendChild(previewBox);
-    overlay.appendChild(card);
-    overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
-    document.body.appendChild(overlay);
-    toast('Preview shown — verify values then close and click Export Image');
   }
 
   if (document.readyState === 'loading') {
