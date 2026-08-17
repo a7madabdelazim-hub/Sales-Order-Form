@@ -108,6 +108,11 @@ html, body {
 .db-list { display: flex; flex-direction: column; gap: 6px; }
 .db-list .db-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; }
 .db-list .db-empty { font-size: 13px; color: var(--muted); }
+.db-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.db-reset-btn {
+  border: none; background: rgba(215,0,21,0.10); color: #d70015;
+  padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer;
+}
 
 </style>
 </head>
@@ -213,7 +218,10 @@ html, body {
 
       <div class="tab-panel" data-panel="dashboard">
         <div class="card">
-          <div class="card-title">Sales Dashboard</div>
+          <div class="db-header">
+            <div class="card-title" style="margin-bottom:0;">Sales Dashboard</div>
+            <button type="button" class="db-reset-btn" id="btnResetDashboard">Reset</button>
+          </div>
           <div class="totals-box"><span>Total orders</span><span id="dbOrders">0</span></div>
           <div class="totals-box"><span>Total revenue</span><span id="dbRevenue">0.00 SAR</span></div>
           <div class="totals-box"><span>This month — orders</span><span id="dbMonthOrders">0</span></div>
@@ -308,7 +316,7 @@ html, body {
     border-radius: 22pt;
     background: #ffffff;
     box-shadow: 0 6pt 18pt rgba(27,30,82,0.10);
-    border: 1pt solid rgba(27,30,82,0.08);
+    border: 1pt solid rgba(27,30,82,0.35);
     position: relative;
   }
   .title-row::after {
@@ -329,7 +337,7 @@ html, body {
     border-radius: 18pt;
     background: #ffffff;
     box-shadow: 0 6pt 16pt rgba(27,30,82,0.10);
-    border: 1pt solid rgba(27,30,82,0.08);
+    border: 1pt solid rgba(27,30,82,0.35);
   }
   .top-label { font-size: 9.5pt; text-transform: uppercase; color: #1B1E52; font-weight: 700; letter-spacing: 0.6pt; }
   .top-value {
@@ -358,7 +366,7 @@ html, body {
     background: #ffffff;
     border-radius: 16pt;
     box-shadow: 0 5pt 14pt rgba(27,30,82,0.10);
-    border: 1pt solid rgba(27,30,82,0.08);
+    border: 1pt solid rgba(27,30,82,0.35);
   }
   .ci-cell.full { grid-column: 1 / -1; }
   .ci-label { font-size: 9.5pt; text-transform: uppercase; color: #1B1E52; font-weight: 700; letter-spacing: 0.6pt; }
@@ -374,20 +382,20 @@ html, body {
     color: #FBF1EA; font-weight: 800; text-align: center;
     font-size: 10.5pt; padding: 10pt 4pt;
     letter-spacing: 0.6pt; border: none;
-    border-right: 1pt solid rgba(255,255,255,0.18);
+    border-right: 1pt solid rgba(255,255,255,0.55);
   }
   .items-table th.pname { text-align: left; padding-left: 10pt; }
   .items-table th:first-child { border-radius: 14pt 0 0 14pt; }
   .items-table th:last-child { border-radius: 0 14pt 14pt 0; border-right: none; }
   .items-table td {
-    border-top: 1pt solid rgba(27,30,82,0.08);
-    border-bottom: 1pt solid rgba(27,30,82,0.08);
-    border-right: 1pt solid rgba(27,30,82,0.10);
+    border-top: 1pt solid rgba(27,30,82,0.35);
+    border-bottom: 1pt solid rgba(27,30,82,0.35);
+    border-right: 1pt solid rgba(27,30,82,0.45);
     padding: 9pt 6pt; font-size: 12pt; text-align: center; height: 22pt;
     color: #1B1E52;
     background: #ffffff;
   }
-  .items-table td:first-child { border-left: 1pt solid rgba(27,30,82,0.08); border-radius: 14pt 0 0 14pt; }
+  .items-table td:first-child { border-left: 1pt solid rgba(27,30,82,0.35); border-radius: 14pt 0 0 14pt; }
   .items-table td:last-child { border-right: none; border-radius: 0 14pt 14pt 0; }
   /* Zebra row: whisper-light navy tint, only on even rows */
   .items-table tbody tr:nth-child(even) td {
@@ -407,7 +415,7 @@ html, body {
   /* ---------- Totals grid — chip strip under the items table ---------- */
   .totals-grid { display: grid; grid-template-columns: 82% 18%; margin-top: 10pt; gap: 8pt 0; }
   .totals-grid > div {
-    border: 1pt solid rgba(27,30,82,0.08);
+    border: 1pt solid rgba(27,30,82,0.35);
     padding: 9pt 15pt; font-size: 12pt;
     background: #ffffff;
     white-space: nowrap; overflow: hidden;
@@ -432,7 +440,7 @@ html, body {
     background: #ffffff;
     border-radius: 16pt;
     box-shadow: 0 5pt 14pt rgba(27,30,82,0.10);
-    border: 1pt solid rgba(27,30,82,0.08);
+    border: 1pt solid rgba(27,30,82,0.35);
     padding: 10pt 13pt; text-align: center;
     font-size: 11pt; font-weight: 800;
     color: #1B1E52; letter-spacing: 0.6pt;
@@ -595,6 +603,21 @@ html, body {
     document.getElementById('dbMonthRevenue').textContent = fmt(monthRevenue) + ' SAR';
     renderDbList(document.getElementById('dbTopCustomers'), topN(byCustomer), function(v) { return fmt(v) + ' SAR'; });
     renderDbList(document.getElementById('dbTopProducts'), topN(byProduct), function(v) { return fmt(v) + ' SAR'; });
+  }
+
+  /* Resets both the dashboard's order history log and the SO-##### order
+     number sequence back to a fresh start. Destructive and local-only, so
+     it asks for confirmation first. */
+  function resetDashboard() {
+    var ok = window.confirm('Reset the dashboard? This clears all logged orders and restarts order numbering at SO-00001. This cannot be undone.');
+    if (!ok) return;
+    localStorage.removeItem(ORDER_LOG_KEY);
+    localStorage.removeItem(ORDER_NO_KEY);
+    assignNewOrderNo();
+    var orderNoInput = document.querySelector('input[data-field="orderNo"]');
+    if (orderNoInput) orderNoInput.value = state.form.orderNo;
+    renderDashboard();
+    toast('Dashboard reset — order numbering restarted at SO-00001');
   }
 
   function escapeHtml(s) {
@@ -991,6 +1014,8 @@ var CGC_LOGO_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAisAAAMcC
 
     document.getElementById('btnNew').addEventListener('click', newForm);
     document.getElementById('btnExport').addEventListener('click', exportPng);
+    var resetBtn = document.getElementById('btnResetDashboard');
+    if (resetBtn) resetBtn.addEventListener('click', resetDashboard);
   }
 
   if (document.readyState === 'loading') {
