@@ -99,19 +99,15 @@ html, body {
 .item-row h4 { margin: 0 0 8px 0; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .totals-box { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
 .totals-box.grand { font-weight: 700; font-size: 16px; border-top: 1px solid var(--border); margin-top: 4px; padding-top: 8px; }
-.preview-wrap { display: none; }
 .toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
   background: rgba(28,28,30,0.92); color: #fff; padding: 10px 18px; border-radius: 10px;
   font-size: 13px; z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
 }
 .toast.error { background: rgba(215,0,21,0.95); }
-.chip-group { display: flex; gap: 8px; }
-.chip {
-  border: 1px solid var(--border); background: #fafafa; color: #1c1c1e;
-  padding: 9px 18px; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer;
-}
-.chip.selected { background: #1c1c1e; color: #fff; border-color: #1c1c1e; }
+.db-list { display: flex; flex-direction: column; gap: 6px; }
+.db-list .db-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; }
+.db-list .db-empty { font-size: 13px; color: var(--muted); }
 
 </style>
 </head>
@@ -142,7 +138,8 @@ html, body {
         <button type="button" class="tab active" data-tab="order">Order</button>
         <button type="button" class="tab" data-tab="customer">Customer</button>
         <button type="button" class="tab" data-tab="items">Items</button>
-        <button type="button" class="tab" data-tab="payment">Payment</button>
+        <button type="button" class="tab" data-tab="payment">Totals</button>
+        <button type="button" class="tab" data-tab="dashboard">Dashboard</button>
       </div>
 
       <div class="tab-panel active" data-panel="order">
@@ -194,21 +191,6 @@ html, body {
 
       <div class="tab-panel" data-panel="payment">
         <div class="card">
-          <div class="card-title">Payment Terms <span class="ar">شروط الدفع</span></div>
-          <div class="field">
-            <label class="field-label">Terms</label>
-            <div class="chip-group" id="termsChipGroup">
-              <button type="button" class="chip" data-terms="CREDIT">Credit</button>
-              <button type="button" class="chip" data-terms="CASH">Cash</button>
-            </div>
-          </div>
-          <div class="field">
-            <label class="field-label">Payment (SAR)</label>
-            <input type="text" inputmode="decimal" data-field="paymentSar" />
-          </div>
-        </div>
-
-        <div class="card">
           <div class="card-title">Totals</div>
           <div class="totals-box"><span>Subtotal</span><span id="uiSubtotal">0.00 SAR</span></div>
           <div class="totals-box"><span>VAT 15%</span><span id="uiVat">0.00 SAR</span></div>
@@ -230,9 +212,24 @@ html, body {
         </div>
       </div>
 
-      <div class="card preview-wrap">
-        <iframe id="previewFrame" style="width:100%; height:1px; border:none;"></iframe>
+      <div class="tab-panel" data-panel="dashboard">
+        <div class="card">
+          <div class="card-title">Sales Dashboard</div>
+          <div class="totals-box"><span>Total orders</span><span id="dbOrders">0</span></div>
+          <div class="totals-box"><span>Total revenue</span><span id="dbRevenue">0.00 SAR</span></div>
+          <div class="totals-box"><span>This month — orders</span><span id="dbMonthOrders">0</span></div>
+          <div class="totals-box grand"><span>This month — revenue</span><span id="dbMonthRevenue">0.00 SAR</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top Customers</div>
+          <div id="dbTopCustomers" class="db-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top Products</div>
+          <div id="dbTopProducts" class="db-list"></div>
+        </div>
       </div>
+
     </section>
   </div>
 </div>
@@ -250,15 +247,15 @@ html, body {
     margin: 0; padding: 0;
     background: #ffffff;
     font-family: "Calibri", "Carlito", "Liberation Sans", "Arial", sans-serif;
-    color: #0B1F3A; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    color: #1B1E52; -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
 
-  /* ---------- Premium liquid-glass palette ---------- */
+  /* ---------- Century Gate palette (sampled from the company logo) ---------- */
   /*
-     Navy gradient  : #0B1F3A -> #1A2F4F  (replaces pure black)
-     Gold accent    : #B8923A -> #D4AF37  (replaces #c00000 red)
-     Cream backdrop : #FAF7F2 -> #F0E6D6  (replaces #fff background)
-     Soft borders   : rgba(11,31,58,0.18)
+     Navy       : #1B1E52 -> #292D78  (the logo's own navy)
+     Copper     : #99451F (text)  /  #C2703D (decorative accents only)
+     Base       : pure white #ffffff, with a soft warm-cream stripe #FBF1EA
+     Borders    : rgba(27,30,82,0.08-0.18)
   */
 
   .page {
@@ -273,196 +270,177 @@ html, body {
     overflow: hidden;
   }
 
-  /* ---------- Watermark: large faded logo behind content ---------- */
+  /* ---------- Watermark: large logo behind content, more visible on white ---------- */
   .watermark {
     position: absolute;
     top: 50%; left: 50%;
-    width: 360pt; height: auto;
+    width: 420pt; height: auto;
     transform: translate(-50%, -50%);
-    opacity: 0.10;
+    opacity: 0.20;
     pointer-events: none;
     z-index: 0;
-    filter: grayscale(15%) saturate(85%);
   }
   .watermark img { width: 100%; height: auto; display: block; }
 
   /* All content sits above the watermark */
-  .title-row, .top-grid, .section-band, .ci-grid, .aging-table,
+  .title-row, .top-grid, .section-band, .ci-grid,
   .items-table, .totals-grid, .sig-grid, .brand-header { position: relative; z-index: 1; }
 
   /* ---------- Brand header (small logo + company name top strip) ---------- */
   .brand-header {
     display: flex; align-items: center; justify-content: space-between;
     padding-bottom: 10pt; margin-bottom: 6pt;
-    border-bottom: 1.5pt solid rgba(11,31,58,0.15);
+    border-bottom: 1.5pt solid rgba(27,30,82,0.15);
   }
   .brand-logo {
     height: 36pt; width: auto; display: block;
-    filter: drop-shadow(0 1pt 2pt rgba(11,31,58,0.18));
   }
   .brand-name {
     font-size: 11pt; font-weight: 800; letter-spacing: 2.5pt;
-    color: #0B1F3A; text-transform: uppercase;
+    color: #1B1E52; text-transform: uppercase;
   }
-  .brand-name .accent { color: #B8923A; }
+  .brand-name .accent { color: #99451F; }
 
-  /* ---------- Title row (SALES ORDER) — liquid glass pill ---------- */
+  /* ---------- Title row (SALES ORDER) — white liquid chip ---------- */
   .title-row {
     display: flex; justify-content: center; align-items: center;
     padding: 16pt 0 16pt 0; margin-bottom: 18pt;
     text-align: center;
     border-radius: 22pt;
-    background: linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.28) 100%);
-    box-shadow: 0 8pt 22pt rgba(11,31,58,0.12);
+    background: #ffffff;
+    box-shadow: 0 6pt 18pt rgba(27,30,82,0.10);
+    border: 1pt solid rgba(27,30,82,0.08);
     position: relative;
   }
   .title-row::after {
     content: ""; position: absolute; left: 50%; bottom: 8pt;
     width: 90pt; height: 2.5pt; border-radius: 2pt; transform: translateX(-50%);
-    background: linear-gradient(90deg, #B8923A 0%, #D4AF37 50%, #B8923A 100%);
+    background: #C2703D;
   }
   .title-en {
     font-size: 30pt; font-weight: 800; letter-spacing: 3pt;
     text-align: center; width: 100%;
-    color: #0B1F3A;
-    text-shadow: 0 1pt 0 rgba(212,175,55,0.10);
+    color: #1B1E52;
   }
 
-  /* ---------- Top info grid — floating glass chips ---------- */
-  .top-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8pt; margin-bottom: 14pt; }
+  /* ---------- Top info grid — floating white liquid chips ---------- */
+  .top-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10pt; margin-bottom: 14pt; }
   .top-cell {
     padding: 11pt 13pt;
     border-radius: 18pt;
-    background: linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(251,246,235,0.86) 100%);
-    box-shadow: 0 6pt 18pt rgba(11,31,58,0.10);
-    border: 1pt solid rgba(255,255,255,0.65);
+    background: #ffffff;
+    box-shadow: 0 6pt 16pt rgba(27,30,82,0.10);
+    border: 1pt solid rgba(27,30,82,0.08);
   }
-  .top-label { font-size: 9.5pt; text-transform: uppercase; color: #0B1F3A; font-weight: 700; letter-spacing: 0.6pt; }
+  .top-label { font-size: 9.5pt; text-transform: uppercase; color: #1B1E52; font-weight: 700; letter-spacing: 0.6pt; }
   .top-value {
     font-size: 15pt; font-weight: 800; margin-top: 4pt;
-    color: #A65E2E;
+    color: #99451F;
   }
 
-  /* ---------- Section bands (glossy navy glass with gold accent) ---------- */
+  /* ---------- Section bands — floating navy chip labels ---------- */
   .section-band {
-    background: linear-gradient(180deg, #8F3D4A 0%, #A34C5A 100%);
-    color: #F5E9C6; font-weight: 800; font-size: 12pt;
-    padding: 9pt 15pt; margin: 14pt 0 0 0;
+    background: #292D78;
+    color: #FBF1EA; font-weight: 800; font-size: 12pt;
+    padding: 9pt 16pt; margin: 14pt 0 8pt 0;
     letter-spacing: 1.2pt;
-    border-radius: 18pt 18pt 0 0;
-    border-left: 3pt solid #D4AF37;
-    box-shadow: 0 4pt 12pt rgba(11,31,58,0.22);
+    border-radius: 16pt;
+    box-shadow: 0 4pt 12pt rgba(27,30,82,0.18);
+    display: inline-block;
   }
-  .section-band.band-customer { background: linear-gradient(180deg, #4A1620 0%, #5E1D2B 100%); }
-  .section-band.band-payment  { background: linear-gradient(180deg, #6E2530 0%, #82303F 100%); }
+  .section-band.band-customer { background: #1B1E52; }
 
-  /* ---------- Customer info grid — continues the glass card below its band ---------- */
+  /* ---------- Customer info grid — white liquid chip card ---------- */
   .ci-grid {
     display: grid; grid-template-columns: 1fr 1fr;
-    background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(251,246,235,0.85) 100%);
-    box-shadow: 0 6pt 18pt rgba(11,31,58,0.10);
-    border-radius: 0 0 18pt 18pt;
+    background: #ffffff;
+    box-shadow: 0 6pt 18pt rgba(27,30,82,0.10);
+    border-radius: 18pt;
+    border: 1pt solid rgba(27,30,82,0.08);
     overflow: hidden;
   }
-  .ci-cell { border-right: 1pt solid rgba(11,31,58,0.10); border-bottom: 1pt solid rgba(11,31,58,0.08); padding: 10pt 13pt; }
+  .ci-cell { border-right: 1pt solid rgba(27,30,82,0.08); border-bottom: 1pt solid rgba(27,30,82,0.06); padding: 10pt 13pt; }
   .ci-cell:last-child { border-right: none; }
   .ci-cell.full { grid-column: 1 / -1; border-right: none; border-bottom: none; }
-  .ci-label { font-size: 9.5pt; text-transform: uppercase; color: #0B1F3A; font-weight: 700; letter-spacing: 0.6pt; }
+  .ci-label { font-size: 9.5pt; text-transform: uppercase; color: #1B1E52; font-weight: 700; letter-spacing: 0.6pt; }
   .ci-value {
     font-size: 15pt; font-weight: 800; margin-top: 4pt;
-    color: #A65E2E;
+    color: #99451F;
   }
 
-  /* ---------- Aging table (payment terms) — glass card matching its band ---------- */
-  .aging-table { width: 100%; border-collapse: collapse; margin-top: 0; box-shadow: 0 6pt 18pt rgba(11,31,58,0.10); }
-  .aging-table th, .aging-table td {
-    border: 1pt solid rgba(11,31,58,0.12);
-    border-top: none;
-    text-align: center; padding: 8pt; font-size: 11pt;
-    background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(251,246,235,0.85) 100%);
-  }
-  .aging-table th {
-    background: linear-gradient(180deg, #6E2530 0%, #82303F 100%);
-    color: #F5E9C6; font-weight: 800; font-size: 12pt;
-    border-color: #6E2530; letter-spacing: 0.8pt;
-  }
-  .aging-table tbody td:first-child { border-bottom-left-radius: 18pt; }
-  .aging-table tbody td:last-child { border-bottom-right-radius: 18pt; }
-  .aging-table td.val {
-    font-weight: 800; font-size: 14pt;
-    color: #A65E2E;
-  }
-  .terms-cell {
-    font-weight: 800; font-size: 14pt;
-    color: #A65E2E;
-  }
-
-  /* ---------- Items table — glass card, continues under its band ---------- */
-  .items-table { width: 100%; border-collapse: collapse; margin-top: 0; table-layout: fixed; box-shadow: 0 6pt 18pt rgba(11,31,58,0.10); }
+  /* ---------- Items table — rounded chip rows, spaced apart (liquid look) ---------- */
+  .items-table { width: 100%; border-collapse: separate; border-spacing: 0 8pt; margin-top: 16pt; table-layout: fixed; }
   .items-table th {
-    background: linear-gradient(180deg, #8F3D4A 0%, #A34C5A 100%);
-    color: #F5E9C6; font-weight: 800; text-align: center;
-    font-size: 10.5pt; padding: 9pt 4pt;
-    border: 1pt solid #0B1F3A; letter-spacing: 0.6pt;
+    background: #292D78;
+    color: #FBF1EA; font-weight: 800; text-align: center;
+    font-size: 10.5pt; padding: 10pt 4pt;
+    letter-spacing: 0.6pt; border: none;
   }
+  .items-table th:first-child { border-radius: 14pt 0 0 14pt; }
+  .items-table th:last-child { border-radius: 0 14pt 14pt 0; }
   .items-table td {
-    border: 1pt solid rgba(11,31,58,0.14);
-    padding: 8pt 5pt; font-size: 12pt; text-align: center; height: 22pt;
-    color: #0B1F3A;
+    border-top: 1pt solid rgba(27,30,82,0.08);
+    border-bottom: 1pt solid rgba(27,30,82,0.08);
+    padding: 9pt 6pt; font-size: 12pt; text-align: center; height: 22pt;
+    color: #1B1E52;
     background: #ffffff;
   }
-  /* Zebra row: very subtle, only on even rows that have content */
+  .items-table td:first-child { border-left: 1pt solid rgba(27,30,82,0.08); border-radius: 14pt 0 0 14pt; }
+  .items-table td:last-child { border-right: 1pt solid rgba(27,30,82,0.08); border-radius: 0 14pt 14pt 0; }
+  /* Zebra row: warm cream stripe, only on even rows */
   .items-table tbody tr:nth-child(even) td {
-    background: #FCF8EE;
+    background: #FBF1EA;
   }
-  /* Numeric columns get solid premium gold text */
+  /* Numeric columns get solid copper text (AA-contrast, not the decorative bright copper) */
   .items-table td:not(:first-child) {
     font-weight: 800;
-    color: #A65E2E;
+    color: #99451F;
   }
   /* Product-name column stays dark navy */
   .items-table td.pname {
-    text-align: left; padding-left: 9pt;
-    color: #0B1F3A;
+    text-align: left; padding-left: 10pt;
+    color: #1B1E52;
   }
 
-  /* ---------- Totals grid — bottom of the itemized glass card ---------- */
-  .totals-grid { display: grid; grid-template-columns: 82% 18%; margin-top: 0; }
+  /* ---------- Totals grid — chip strip under the items table ---------- */
+  .totals-grid { display: grid; grid-template-columns: 82% 18%; margin-top: 10pt; gap: 8pt 0; }
   .totals-grid > div {
-    border: 1pt solid rgba(11,31,58,0.14);
-    border-top: none; padding: 9pt 15pt; font-size: 12pt;
-    background: linear-gradient(180deg, #ffffff 0%, #FBF6EB 100%);
+    border: 1pt solid rgba(27,30,82,0.08);
+    padding: 9pt 15pt; font-size: 12pt;
+    background: #ffffff;
     white-space: nowrap; overflow: hidden;
   }
-  .totals-grid .tlabel { text-align: right; font-weight: 800; color: #0B1F3A; }
+  .totals-grid > div:nth-child(odd) { border-radius: 14pt 0 0 14pt; border-right: none; }
+  .totals-grid > div:nth-child(even) { border-radius: 0 14pt 14pt 0; }
+  .totals-grid .tlabel { text-align: right; font-weight: 800; color: #1B1E52; }
   .totals-grid .tval {
-    text-align: right; font-weight: 800; color: #A65E2E;
+    text-align: right; font-weight: 800; color: #99451F;
     padding-left: 4pt; padding-right: 6pt; font-size: 10.5pt;
   }
-  .totals-grid .grand .tlabel, .totals-grid .grand .tval {
+  .totals-grid .tlabel.grand, .totals-grid .tval.grand {
     font-size: 15pt;
-    background: linear-gradient(180deg, #8F3D4A 0%, #A34C5A 100%);
+    background: #292D78; border-color: #292D78;
   }
-  .totals-grid .grand .tlabel { color: #F5E9C6; border-bottom-left-radius: 18pt; }
-  .totals-grid .grand .tval { color: #D4AF37; border-bottom-right-radius: 18pt; font-size: 12pt; }
+  .totals-grid .tlabel.grand { color: #FBF1EA; }
+  .totals-grid .tval.grand { color: #FBF1EA; font-size: 12pt; }
 
   /* ---------- Signature row ---------- */
   .sig-grid { display: grid; grid-template-columns: 1fr 1fr; margin-top: 24pt; }
   .sig-grid > div {
-    border-top: 1.5pt solid #0B1F3A;
+    border-top: 1.5pt solid #1B1E52;
     padding-top: 7pt; text-align: center;
     font-size: 11pt; font-weight: 800; margin: 0 20pt;
-    color: #0B1F3A; letter-spacing: 0.6pt;
+    color: #1B1E52; letter-spacing: 0.6pt;
   }
 
-  /* ---------- Footer ribbon — soft glass pill ---------- */
+  /* ---------- Footer ribbon ---------- */
   .footer-ribbon {
     margin-top: 18pt; padding: 7pt 14pt;
     text-align: center; font-size: 8.5pt;
-    color: #6e6e73; letter-spacing: 1.5pt;
+    color: #5B5E86; letter-spacing: 1.5pt;
     border-radius: 12pt;
   }
-  .footer-ribbon .accent { color: #B8923A; font-weight: 700; }
+  .footer-ribbon .accent { color: #99451F; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -503,7 +481,6 @@ html, body {
     return {
       orderNo: '', orderDate: '', deliveryDate: '',
       accNo: '', customerName: '', address: '',
-      paymentTerms: '', paymentSar: '',
       items: items,
       salesman: '', approved: ''
     };
@@ -528,6 +505,93 @@ html, body {
     return next;
   }
 
+  /* Lightweight, automatic order log — just enough data for the Sales
+     Dashboard (totals, top customers, top products). Not a browsable
+     order-history UI, just a running record kept in this browser. */
+  var ORDER_LOG_KEY = 'cgc_salesOrder_log';
+  var ORDER_LOG_MAX = 500;
+  function getOrderLog() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(ORDER_LOG_KEY) || '[]');
+      return Array.isArray(raw) ? raw : [];
+    } catch (e) { return []; }
+  }
+  function logExportedOrder(form, totals) {
+    var log = getOrderLog();
+    var items = form.items
+      .filter(function(it) { return it.productName && (it.qty || it.total); })
+      .map(function(it) {
+        return {
+          name: (it.productName || '').trim(),
+          qty: parseFloat(it.qty) || 0,
+          total: parseFloat(String(it.total).replace(/,/g, '')) || 0
+        };
+      });
+    log.push({
+      orderNo: form.orderNo,
+      customerName: (form.customerName || '').trim() || '(no name)',
+      items: items,
+      subtotal: totals.subtotal,
+      vat: totals.vat,
+      grand: totals.grand,
+      exportedAt: new Date().toISOString()
+    });
+    if (log.length > ORDER_LOG_MAX) log = log.slice(log.length - ORDER_LOG_MAX);
+    localStorage.setItem(ORDER_LOG_KEY, JSON.stringify(log));
+  }
+
+  function renderDbList(container, rows, valueFmt) {
+    container.innerHTML = '';
+    if (!rows.length) {
+      container.innerHTML = '<div class="db-empty">No exported orders yet</div>';
+      return;
+    }
+    rows.forEach(function(r) {
+      var row = document.createElement('div');
+      row.className = 'db-row';
+      row.innerHTML = '<span>' + escapeHtml(r.name) + '</span><span>' + valueFmt(r.value) + '</span>';
+      container.appendChild(row);
+    });
+  }
+
+  function renderDashboard() {
+    var log = getOrderLog();
+    var totalRevenue = 0;
+    var now = new Date();
+    var ymKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    var monthOrders = 0, monthRevenue = 0;
+    var byCustomer = {}, byProduct = {};
+
+    log.forEach(function(r) {
+      totalRevenue += r.grand || 0;
+      if ((r.exportedAt || '').slice(0, 7) === ymKey) {
+        monthOrders++;
+        monthRevenue += r.grand || 0;
+      }
+      var custKey = r.customerName || '(no name)';
+      byCustomer[custKey] = (byCustomer[custKey] || 0) + (r.grand || 0);
+      (r.items || []).forEach(function(it) {
+        var prodKey = (it.name || '').trim().toUpperCase();
+        if (!prodKey) return;
+        byProduct[prodKey] = (byProduct[prodKey] || 0) + (it.total || 0);
+      });
+    });
+
+    var topN = function(map) {
+      return Object.keys(map)
+        .map(function(k) { return { name: k, value: map[k] }; })
+        .sort(function(a, b) { return b.value - a.value; })
+        .slice(0, 5);
+    };
+
+    document.getElementById('dbOrders').textContent = String(log.length);
+    document.getElementById('dbRevenue').textContent = fmt(totalRevenue) + ' SAR';
+    document.getElementById('dbMonthOrders').textContent = String(monthOrders);
+    document.getElementById('dbMonthRevenue').textContent = fmt(monthRevenue) + ' SAR';
+    renderDbList(document.getElementById('dbTopCustomers'), topN(byCustomer), function(v) { return fmt(v) + ' SAR'; });
+    renderDbList(document.getElementById('dbTopProducts'), topN(byProduct), function(v) { return fmt(v) + ' SAR'; });
+  }
+
   function escapeHtml(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -547,21 +611,14 @@ html, body {
     return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
 
-  /* Format delivery date in a DIFFERENT format from the auto-generated
-     Sales Order Date (which is DD/MM/YYYY).
-     Delivery Date input returns YYYY-MM-DD; we convert to "DD MMM YYYY"
-     e.g. "23 Jul 2026" so it is visually distinct from the SO date. */
+  /* Delivery Date input returns YYYY-MM-DD; convert to DD/MM/YYYY so it
+     matches the same format as the Sales Order Date cell. */
   function formatDeliveryDate(raw) {
     if (!raw) return '';
     var s = String(raw).trim();
     var m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!m) return s;
-    var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    var yyyy = m[1];
-    var mm = parseInt(m[2], 10);
-    var dd = m[3];
-    if (mm < 1 || mm > 12) return s;
-    return dd + ' ' + months[mm - 1] + ' ' + yyyy;
+    return m[3] + '/' + m[2] + '/' + m[1];
   }
 
   function toast(msg, type) {
@@ -636,15 +693,6 @@ var CGC_LOGO_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAisAAAMcC
         '<div class="ci-cell"><div class="ci-label">Name</div><div class="ci-value">' + escapeHtml(form.customerName) + '</div></div>' +
         '<div class="ci-cell full"><div class="ci-label">Address</div><div class="ci-value">' + escapeHtml(form.address) + '</div></div>' +
       '</div>' +
-      '<div class="section-band band-payment">Payment Terms</div>' +
-      '<table class="aging-table"><thead><tr>' +
-        '<th style="width:50%;">Terms</th>' +
-        '<th style="width:50%;">Payment (SAR)</th>' +
-      '</tr></thead><tbody><tr>' +
-        '<td class="terms-cell">' + escapeHtml(form.paymentTerms) + '</td>' +
-        '<td class="val">' + escapeHtml(form.paymentSar) + '</td>' +
-      '</tr></tbody></table>' +
-      '<div class="section-band band-items">Itemized List of Goods</div>' +
       '<table class="items-table"><thead><tr>' +
         '<th style="width:6%;">No.</th>' +
         '<th style="width:46%;">Product Name</th>' +
@@ -685,27 +733,6 @@ var CGC_LOGO_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAisAAAMcC
     previewTimer = setTimeout(function() { updateTotalsUi(); }, 150);
   }
 
-  function refreshTermsChips() {
-    var group = document.getElementById('termsChipGroup');
-    if (!group) return;
-    group.querySelectorAll('.chip').forEach(function(chip) {
-      chip.classList.toggle('selected', chip.getAttribute('data-terms') === state.form.paymentTerms);
-    });
-  }
-  function initTermsChips() {
-    var group = document.getElementById('termsChipGroup');
-    if (!group) return;
-    group.querySelectorAll('.chip').forEach(function(chip) {
-      chip.addEventListener('click', function() {
-        var val = chip.getAttribute('data-terms');
-        state.form.paymentTerms = (state.form.paymentTerms === val) ? '' : val;
-        refreshTermsChips();
-        updateEditingName();
-      });
-    });
-    refreshTermsChips();
-  }
-
   function initTabs() {
     document.querySelectorAll('#tabs .tab').forEach(function(tab) {
       tab.addEventListener('click', function() {
@@ -714,6 +741,7 @@ var CGC_LOGO_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAisAAAMcC
         tab.classList.add('active');
         var target = tab.getAttribute('data-tab');
         document.querySelector('.tab-panel[data-panel="' + target + '"]').classList.add('active');
+        if (target === 'dashboard') renderDashboard();
       });
     });
   }
@@ -853,7 +881,6 @@ var CGC_LOGO_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAisAAAMcC
       input.value = v == null ? '' : v;
     });
     renderItems();
-    refreshTermsChips();
     updateTotalsUi();
   }
 
@@ -867,12 +894,11 @@ var CGC_LOGO_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAisAAAMcC
     }
 
     /* Sanity check: warn if the form appears to be completely empty
-       (no customer name, no items, no payment). This helps the user
-       realize they need to fill in the form before exporting. */
+       (no customer name, no items). This helps the user realize they
+       need to fill in the form before exporting. */
     var hasCustomer = !!(state.form.customerName && state.form.customerName.trim());
     var hasItems = state.form.items.some(function(it) { return it.qty || it.price || it.productName; });
-    var hasPayment = !!(state.form.paymentSar && state.form.paymentSar.trim());
-    if (!hasCustomer && !hasItems && !hasPayment) {
+    if (!hasCustomer && !hasItems) {
       toast('Form looks empty — fill in customer/items first!', 'error');
       return;
     }
@@ -907,6 +933,7 @@ var CGC_LOGO_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAisAAAMcC
           URL.revokeObjectURL(url);
           container.remove();
           toast('Image ready: ' + fileName);
+          logExportedOrder(state.form, computeTotals());
           bumpOrderCounter();
           assignNewOrderNo();
           var orderNoInput = document.querySelector('input[data-field="orderNo"]');
@@ -941,7 +968,6 @@ var CGC_LOGO_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAisAAAMcC
     var orderNoInput = document.querySelector('input[data-field="orderNo"]');
     if (orderNoInput) orderNoInput.value = state.form.orderNo;
 
-    initTermsChips();
     renderItems();
     updateEditingName();
     updateTotalsUi();
